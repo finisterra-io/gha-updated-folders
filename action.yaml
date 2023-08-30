@@ -41,6 +41,7 @@ runs:
       shell: bash
       run: |
         PR_DESCRIPTION=${{ inputs.pr-description }}}
+        PR_DESCRIPTION=$(echo -e "${PR_DESCRIPTION//\#/\\n}")
 
         if [[ "$PR_DESCRIPTION" == *"[skip cicd]"* ]]; then
           echo "Setting output to skip subsequent jobs."
