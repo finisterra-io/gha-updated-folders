@@ -38,6 +38,7 @@ runs:
   steps:
     - name: Check PR description for [skip cicd]
       id: check-skip
+      shell: bash
       run: |
         PR_DESCRIPTION=${{ inputs.pr-description }}}
 
@@ -70,6 +71,7 @@ runs:
 
     - name: List all changed folders
       id: get-folders
+      shell: bash
       run: |
         if [[ "${{ steps.check-skip.outputs.skip_cicd }}" == "true" ]]; then
           folders="[]"
