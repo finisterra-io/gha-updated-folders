@@ -1,0 +1,92 @@
+name: "Get updated folders"
+description: "Get the list of folders that have been updated when a PR is merged"
+
+author: Finisterra-io
+
+branding:
+  icon: "terminal"
+  color: "blue"
+
+inputs:
+  base-path:
+    description: "Base path to use for the changed files"
+    required: true
+    default: "finisterra"
+outputs:
+  folders:
+    description: "List of folders that have been updated"
+    value: ${{ steps.get-folders.outputs.folders }}
+  skip_cicd:
+    description: "Whether to skip the cicd or not"
+    value: ${{ steps.check-skip.outputs.skip_cicd }}
+  AWS_REGION:
+    description: "AWS region to use"
+    value: ${{ steps.check-skip.outputs.AWS_REGION }}
+  AWS_ROLE:
+    description: "AWS role to use"
+    value: ${{ steps.check-skip.outputs.AWS_ROLE }}
+  STATE_FILE:
+    description: "State file to use"
+    value: ${{ steps.check-skip.outputs.STATE_FILE }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Check PR description for [skip cicd]
+      id: check-skip
+      run: |
+        # Extract the PR number from the commit message of the recent push.
+        COMMIT_MESSAGE=$(git log -1 --pretty=%B)
+        PR_NUMBER=$(echo "$COMMIT_MESSAGE" | grep -oP 'Merge pull request #\K\d+')
+
+        # Ensure we found a PR number before proceeding.
+        if [[ -z "$PR_NUMBER" ]]; then
+          echo "Could not determine PR number from commit message. Exiting."
+          echo "skip_cicd=true" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+
+        # Get the description of the PR using its number.
+        PR_DESCRIPTION=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          https://api.github.com/repos/${{ github.repository }}/pulls/$PR_NUMBER | \
+          jq -r '.body')
+
+        echo "PR Description: $PR_DESCRIPTION"
+
+        if [[ "$PR_DESCRIPTION" == *"[skip cicd]"* ]]; then
+          echo "Setting output to skip subsequent jobs."
+          echo "skip_cicd=true" >> $GITHUB_OUTPUT
+
+          # Parse AWS_ACCOUNT_ID, AWS_REGION, and state_file from the PR description.
+          AWS_ACCOUNT_ID=$(echo "$PR_DESCRIPTION" | grep -oP 'AWS_ACCOUNT_ID: \K\d+')
+          AWS_REGION=$(echo "$PR_DESCRIPTION" | grep -oP 'AWS_REGION: \K\w+(-\w+)*')
+          STATE_FILE=$(echo "$PR_DESCRIPTION" | grep -oP 'State file: \Ks3://[^ ]+')
+
+          # Set the parsed values as output variables.
+          echo "AWS_REGION=$AWS_REGION" >> $GITHUB_OUTPUT
+          echo "STATE_FILE=$STATE_FILE" >> $GITHUB_OUTPUT
+          echo "AWS_ROLE=arn:aws:iam::$AWS_ACCOUNT_ID:role/gha-cicd" >> $GITHUB_OUTPUT
+
+        else
+          echo "Setting output to run subsequent jobs."
+          echo "skip_cicd=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Get changed files
+      id: changed-files
+      if: ${{ steps.check-skip.outputs.skip_cicd }} != 'true'
+      uses: tj-actions/changed-files@v38
+      with:
+        dir_names: true
+        files: finisterra/**/*.{hcl,tf}
+
+    - name: List all changed folders
+      id: get-folders
+      run: |
+        if [[ "${{ steps.check-skip.outputs.skip_cicd }}" == "true" ]]; then
+          folders="[]"
+        else
+          folders=$(echo ${{ steps.changed-files.outputs.all_modified_files }} | jq -R -s -c '[split(" ")[] | rtrimstr("\n")]')
+        fi
+        echo "Modified folders: $folders"
+        echo "folders=$folders" >> $GITHUB_OUTPUT
