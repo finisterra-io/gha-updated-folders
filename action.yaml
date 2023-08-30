@@ -39,23 +39,7 @@ runs:
     - name: Check PR description for [skip cicd]
       id: check-skip
       run: |
-        # Extract the PR number from the commit message of the recent push.
-        COMMIT_MESSAGE=$(git log -1 --pretty=%B)
-        PR_NUMBER=$(echo "$COMMIT_MESSAGE" | grep -oP 'Merge pull request #\K\d+')
-
-        # Ensure we found a PR number before proceeding.
-        if [[ -z "$PR_NUMBER" ]]; then
-          echo "Could not determine PR number from commit message. Exiting."
-          echo "skip_cicd=true" >> $GITHUB_OUTPUT
-          exit 0
-        fi
-
-        # Get the description of the PR using its number.
-        PR_DESCRIPTION=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-          https://api.github.com/repos/${{ github.repository }}/pulls/$PR_NUMBER | \
-          jq -r '.body')
-
-        echo "PR Description: $PR_DESCRIPTION"
+        PR_DESCRIPTION=${{ inputs.pr-description }}}
 
         if [[ "$PR_DESCRIPTION" == *"[skip cicd]"* ]]; then
           echo "Setting output to skip subsequent jobs."
