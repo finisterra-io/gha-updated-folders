@@ -1,5 +1,5 @@
 name: "Get updated folders"
-description: "Get the list of folders that have been updated when a PR is merged"
+description: "Get the list of folders that have been updated"
 
 author: Finisterra-io
 
@@ -12,6 +12,10 @@ inputs:
     description: "Base path to use for the changed files"
     required: true
     default: "finisterra"
+  pr-description:
+    description: "PR description"
+    required: true
+    default: "${{ github.event.pull_request.body }}"
 outputs:
   folders:
     description: "List of folders that have been updated"
