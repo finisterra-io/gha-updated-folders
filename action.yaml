@@ -41,7 +41,7 @@ runs:
       shell: bash
       run: |
         set -x
-        PR_DESCRIPTION="${{ inputs.pr-description }}}"
+        PR_DESCRIPTION="${{ inputs.pr-description }}"
         PR_DESCRIPTION=$(echo -e "${PR_DESCRIPTION//\#/\\n}")
 
         if [[ "$PR_DESCRIPTION" == *"[skip cicd]"* ]]; then
@@ -49,7 +49,7 @@ runs:
           echo "skip_cicd=true" >> $GITHUB_OUTPUT
 
           # Parse AWS_ACCOUNT_ID, AWS_REGION from the PR description.
-          FOLDER=$(echo "$PR_DESCRIPTION" | grep -oP 'FOLDER: \K\d+')
+          FOLDER=$(echo "$PR_DESCRIPTION" | grep -oP 'FOLDER: \K.+')
           AWS_ACCOUNT_ID=$(echo "$PR_DESCRIPTION" | grep -oP 'AWS_ACCOUNT_ID: \K\d+')
           AWS_REGION=$(echo "$PR_DESCRIPTION" | grep -oP 'AWS_REGION: \K\w+(-\w+)*')
 
