@@ -29,6 +29,9 @@ outputs:
   AWS_ROLE:
     description: "AWS role to use"
     value: ${{ steps.check-skip.outputs.AWS_ROLE }}
+  FOLDER:
+    description: "Folder gor generated code"
+    value: ${{ steps.check-skip.outputs.FOLDER }}
 
 runs:
   using: "composite"
@@ -45,10 +48,12 @@ runs:
           echo "skip_cicd=true" >> $GITHUB_OUTPUT
 
           # Parse AWS_ACCOUNT_ID, AWS_REGION from the PR description.
+          FOLDER=$(echo "$PR_DESCRIPTION" | grep -oP 'FOLDER: \K\d+')
           AWS_ACCOUNT_ID=$(echo "$PR_DESCRIPTION" | grep -oP 'AWS_ACCOUNT_ID: \K\d+')
           AWS_REGION=$(echo "$PR_DESCRIPTION" | grep -oP 'AWS_REGION: \K\w+(-\w+)*')
 
           # Set the parsed values as output variables.
+          echo "FOLDER=$FOLDER" >> $GITHUB_OUTPUT
           echo "AWS_REGION=$AWS_REGION" >> $GITHUB_OUTPUT
           echo "AWS_ROLE=arn:aws:iam::$AWS_ACCOUNT_ID:role/gha-cicd" >> $GITHUB_OUTPUT
 
