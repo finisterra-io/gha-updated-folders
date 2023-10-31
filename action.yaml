@@ -101,7 +101,7 @@ runs:
           }
 
           for folder in "${modified_files[@]}"; do
-            process_folder_for_folders "$folder"
+            process_folder_for_matrix_data "$folder"
           done
           folders=$(echo "$folders" | jq 'unique_by(.folder)')
           folders=$(echo "$folders" | jq -c .)
