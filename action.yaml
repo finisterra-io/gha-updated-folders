@@ -53,6 +53,7 @@ runs:
           AWS_REGION=$(echo "$PR_DESCRIPTION" | grep -oP 'AWS_REGION: \K\w+(-\w+)*')
 
           # Set the parsed values as output variables.
+          echo $FOLDER
           echo "FOLDER=$FOLDER" >> $GITHUB_OUTPUT
           echo "AWS_REGION=$AWS_REGION" >> $GITHUB_OUTPUT
           echo "AWS_ROLE=arn:aws:iam::$AWS_ACCOUNT_ID:role/gha-cicd" >> $GITHUB_OUTPUT
