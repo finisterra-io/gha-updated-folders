@@ -12,23 +12,10 @@ inputs:
     description: "Base path to use for the changed files"
     required: true
     default: "finisterra"
-  pr-description:
-    description: "PR description"
-    required: true
-    default: "${{ github.event.pull_request.body }}"
 outputs:
   folders:
     description: "List of folders that have been updated"
     value: ${{ steps.get-folders.outputs.folders }}
-  skip_cicd:
-    description: "Whether to skip the cicd or not"
-    value: ${{ steps.check-skip.outputs.skip_cicd }}
-  AWS_REGION:
-    description: "AWS region to use"
-    value: ${{ steps.check-skip.outputs.AWS_REGION }}
-  AWS_ROLE:
-    description: "AWS role to use"
-    value: ${{ steps.check-skip.outputs.AWS_ROLE }}
 
 runs:
   using: "composite"
