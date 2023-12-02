@@ -59,7 +59,6 @@ runs:
 
     - name: Get changed files
       id: changed-files
-      if: ${{ steps.check-skip.outputs.skip_cicd }} != 'true'
       uses: tj-actions/changed-files@v38
       with:
         dir_names: true
@@ -69,37 +68,33 @@ runs:
       id: get-folders
       shell: bash
       run: |
-        if [[ "${{ steps.check-skip.outputs.skip_cicd }}" == "true" ]]; then
-          folders="[]"
-        else
-          folders_string="${{ steps.changed-files.outputs.all_modified_files }}"
-          IFS=' ' read -ra modified_files <<< "$folders_string"
+        folders_string="${{ steps.changed-files.outputs.all_modified_files }}"
+        IFS=' ' read -ra modified_files <<< "$folders_string"
 
-          folders="[]"
+        folders="[]"
 
-          process_folder_for_matrix_data() {
-              local folder=$1
+        process_folder_for_matrix_data() {
+            local folder=$1
 
-              IFS='/' read -ra ADDR <<< "$folder"
+            IFS='/' read -ra ADDR <<< "$folder"
 
-              if [ ${#ADDR[@]} -ge 4 ] && [[ "${ADDR[0]}/${ADDR[1]}" == "finisterra/generated" ]]; then
-                  local folder="${ADDR[0]}/${ADDR[1]}/${ADDR[2]}/${ADDR[3]}/${ADDR[4]}/${ADDR[5]}"
-                  local aws_account_id="${ADDR[3]}"
-                  local aws_region="${ADDR[4]}"
-                  local service_name="${ADDR[5]}"
-                  if [ "$service_name" == "" ]; then
-                      return
-                  fi
-                  [ "$aws_region" == "global" ] && aws_region="us-east-1"
-                  folders=$(echo "$folders" | jq --arg folder "$folder" --arg aws_region "$aws_region" --arg aws_account_id "$aws_account_id" --arg service_name "$service_name" '. + [{folder: $folder, aws_region: $aws_region, aws_account_id: $aws_account_id, service_name: $service_name}]')
-              fi
-          }
+            if [ ${#ADDR[@]} -ge 4 ] && [[ "${ADDR[0]}/${ADDR[1]}" == "finisterra/generated" ]]; then
+                local folder="${ADDR[0]}/${ADDR[1]}/${ADDR[2]}/${ADDR[3]}/${ADDR[4]}/${ADDR[5]}"
+                local aws_account_id="${ADDR[3]}"
+                local aws_region="${ADDR[4]}"
+                local service_name="${ADDR[5]}"
+                if [ "$service_name" == "" ]; then
+                    return
+                fi
+                [ "$aws_region" == "global" ] && aws_region="us-east-1"
+                folders=$(echo "$folders" | jq --arg folder "$folder" --arg aws_region "$aws_region" --arg aws_account_id "$aws_account_id" --arg service_name "$service_name" '. + [{folder: $folder, aws_region: $aws_region, aws_account_id: $aws_account_id, service_name: $service_name}]')
+            fi
+        }
 
-          for folder in "${modified_files[@]}"; do
-            process_folder_for_matrix_data "$folder"
-          done
-          folders=$(echo "$folders" | jq 'unique_by(.folder)')
-          folders=$(echo "$folders" | jq -c .)
-        fi
+        for folder in "${modified_files[@]}"; do
+          process_folder_for_matrix_data "$folder"
+        done
+        folders=$(echo "$folders" | jq 'unique_by(.folder)')
+        folders=$(echo "$folders" | jq -c .)
         echo "Modified folders: $folders"
         echo "folders=$folders" >> $GITHUB_OUTPUT
