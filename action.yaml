@@ -33,30 +33,6 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: Check PR description for [skip cicd]
-      id: check-skip
-      shell: bash
-      run: |
-        PR_DESCRIPTION="${{ inputs.pr-description }}"
-        PR_DESCRIPTION=$(echo -e "${PR_DESCRIPTION//\#/\\n}")
-
-        if [[ "$PR_DESCRIPTION" == *"[skip cicd]"* ]]; then
-          echo "Setting output to skip subsequent jobs."
-          echo "skip_cicd=true" >> $GITHUB_OUTPUT
-
-          # Parse AWS_ACCOUNT_ID, AWS_REGION from the PR description.
-          AWS_ACCOUNT_ID=$(echo "$PR_DESCRIPTION" | grep -oP 'AWS_ACCOUNT_ID: \K\d+')
-          AWS_REGION=$(echo "$PR_DESCRIPTION" | grep -oP 'AWS_REGION: \K\w+(-\w+)*')
-
-          # Set the parsed values as output variables.
-          echo "AWS_REGION=$AWS_REGION" >> $GITHUB_OUTPUT
-          echo "AWS_ROLE=arn:aws:iam::$AWS_ACCOUNT_ID:role/gha-cicd" >> $GITHUB_OUTPUT
-
-        else
-          echo "Setting output to run subsequent jobs."
-          echo "skip_cicd=false" >> $GITHUB_OUTPUT
-        fi
-
     - name: Get changed files
       id: changed-files
       uses: tj-actions/changed-files@v38
